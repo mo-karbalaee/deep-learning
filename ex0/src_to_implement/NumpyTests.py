@@ -18,7 +18,7 @@ class TestCheckers(unittest.TestCase):
         # Creates a checkerboard pattern with resolution 250x250
         # and a tile_size of 25 and compares it to the reference image
 
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Checker(250, 25)
         c.draw()
         np.testing.assert_almost_equal(c.output, self.reference_img, err_msg="Check if your pattern starts with a"
@@ -28,7 +28,7 @@ class TestCheckers(unittest.TestCase):
         # Creates a checkerboard pattern with resolution 100x100
         # and a tile_size of 25 and compares it to the reference image
 
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Checker(100, 25)
         c.draw()
         np.testing.assert_almost_equal(c.output, self.reference_img2, err_msg="Check if your pattern starts with a"
@@ -37,7 +37,7 @@ class TestCheckers(unittest.TestCase):
     def testReturnCopy(self):
         # Checks whether the output of the pattern is a copy of the output object rather than the output object itself.
 
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Checker(100, 25)
         res = c.draw()
         res[:] = 0
@@ -65,7 +65,7 @@ class TestCircle(unittest.TestCase):
         # Creates an image of a circle with resolution 1024x1024 a radius of 200 with a center at
         # (512,256) and compares it to the reference image using the IoU metric
 
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Circle(1024, 200, (512, 256))
         circ = c.draw()
         iou = self._IoU(circ, self.reference_img)
@@ -80,7 +80,7 @@ class TestCircle(unittest.TestCase):
     def testPatternDifferentSize(self):
         # Creates an image of a circle with resolution 512x512 a radius of 20 with a center at
         # (50,50) and compares it to the reference image using the IoU metric
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Circle(512, 20, (50, 50))
         circ = c.draw()
         iou = self._IoU(circ, self.reference_img2)
@@ -94,7 +94,7 @@ class TestCircle(unittest.TestCase):
 
     def testReturnCopy(self):
         # Checks whether the output of the pattern is a copy of the output object rather than the output object itself.
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Circle(512, 20, (50, 50))
         res = c.draw()
         res[:] = 0
@@ -122,7 +122,7 @@ class TestSpectrum(unittest.TestCase):
 
     def testPattern(self):
         # Creates an RGB spectrum with resolution 255x255x3 and compares it to the reference image
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         s = pattern.Spectrum(255)
         spec = s.draw()
         np.testing.assert_almost_equal(spec,
@@ -135,7 +135,7 @@ class TestSpectrum(unittest.TestCase):
 
     def testPatternDifferentSize(self):
         # Creates an RGB spectrum with resolution 100x100x3 and compares it to the reference image
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         s = pattern.Spectrum(100)
         spec = s.draw()
         np.testing.assert_almost_equal(spec,
@@ -150,7 +150,7 @@ class TestSpectrum(unittest.TestCase):
     def testReturnCopy(self):
         # Checks whether the output of the pattern is a copy of the
         # output object rather than the output object itself.
-        import pattern
+        import ex0.src_to_implement.pattern as pattern
         c = pattern.Spectrum(100)
         res = c.draw()
         res[:] = 0
@@ -172,7 +172,7 @@ class TestGen(unittest.TestCase):
     def testInit(self):
         # Creates two image generator objects without shuffling.
         # Calling next on either one should result in the same output
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 12, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=False)
         gen2 = ImageGenerator(self.file_path, self.label_path, 12, [32, 32, 3], rotation=False, mirroring=False,
@@ -185,7 +185,7 @@ class TestGen(unittest.TestCase):
     def testDuplicate(self):
         # Image Generator without overlapping batches.
         # Choose one output sample at random and check if it is the only instance in both batches.
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 50, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=False)
         b1 = gen.next()
@@ -209,7 +209,7 @@ class TestGen(unittest.TestCase):
         # overlap of 20 occurs, therefore the first 20 elements
         # of the first batch should be equal to the last 20 of the second batch
         # check with two different batch sizes
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 60, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=False)
         gen2 = ImageGenerator(self.file_path, self.label_path, 83, [32, 32, 3], rotation=False, mirroring=False,
@@ -229,7 +229,7 @@ class TestGen(unittest.TestCase):
     def testShuffle(self):
         # Creates two image generator objects.
         # Since shuffle is enabled for one image generator the output should be different.
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 10, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=True)
         gen2 = ImageGenerator(self.file_path, self.label_path, 10, [32, 32, 3], rotation=False, mirroring=False,
@@ -251,7 +251,7 @@ class TestGen(unittest.TestCase):
     def testShuffleEpoch(self):
         # Checks for shuffling of complete data set, not only inside batch after one epoch
         # Detects if the same images (or rather pixel values) are included in the same batch
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 50, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=True)
         b1_epoch0 = gen.next()[0]
@@ -262,7 +262,7 @@ class TestGen(unittest.TestCase):
                              "to shuffle the whole dataset after one epoch (not only within the batches).")
 
     def testEpoch(self):
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         gen = ImageGenerator(self.file_path, self.label_path, 50, [32, 32, 3], rotation=False, mirroring=False,
                              shuffle=True)
         gen.next()
@@ -279,7 +279,7 @@ class TestGen(unittest.TestCase):
                                                      "epoch.")
 
     def testRotation(self):
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
 
         batch1 = ImageGenerator(self.file_path, self.label_path, 100, [32, 32, 3], rotation=False, mirroring=False,
                                 shuffle=False).next()[0]
@@ -317,7 +317,7 @@ class TestGen(unittest.TestCase):
                                                "90, 180 or 270 degrees.")
 
     def testMirroring(self):
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
 
         batch1 = ImageGenerator(self.file_path, self.label_path, 12, [32, 32, 3], rotation=False, mirroring=False,
                                 shuffle=False).next()[0]
@@ -369,7 +369,7 @@ class TestGen(unittest.TestCase):
                                        )
 
     def testResize(self):
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
 
         batch = ImageGenerator(self.file_path, self.label_path, 12, [50, 50, 3], rotation=False, mirroring=False,
                                shuffle=False).next()[0]
@@ -380,7 +380,7 @@ class TestGen(unittest.TestCase):
     def testLabels(self):
         # this test makes sure your generator returns integers as labels and not any strings or floating point values
         # if this one fails make sure you cast your array values to integers
-        from generator import ImageGenerator
+        from ex0.src_to_implement.generator import ImageGenerator
         label = ImageGenerator(self.file_path, self.label_path, 12, [50, 50, 3], rotation=False, mirroring=False,
                                shuffle=False).next()[1]
 

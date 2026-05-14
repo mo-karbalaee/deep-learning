@@ -1,5 +1,5 @@
-import pattern
-import generator
+import ex0.src_to_implement.pattern as pattern
+import ex0.src_to_implement.generator as generator
 
 def main():
     c = pattern.Checker(250, 25)
