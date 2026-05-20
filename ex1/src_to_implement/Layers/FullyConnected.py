@@ -14,7 +14,11 @@ class FullyConnected(BaseLayer):
     def backward(self, error_tensor):
         if self.optimizer == None:
             raise ValueError("Optimizer is missing!")
-        pass
+        
+        prev_error_tensor = error_tensor @ self.weights.T
+        gradient_tensor = self.input.T @ error_tensor
+        self.weights = self.optimizer.update(self.weights, gradient_tensor)
+        return prev_error_tensor
     
     @property
     def optimizer(self):
