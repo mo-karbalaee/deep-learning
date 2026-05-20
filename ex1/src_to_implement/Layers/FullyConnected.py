@@ -8,11 +8,13 @@ class FullyConnected(BaseLayer):
         self.weights = np.random.uniform(0, 1, (input_size, output_size))
 
     def forward(self, input_tensor):
-        pass
+        self.input_tensor = input_tensor
+        return np.matmul(input_tensor, self.weights)
 
     def backward(self, error_tensor):
         if self.optimizer == None:
             raise ValueError("Optimizer is missing!")
+        pass
     
     @property
     def optimizer(self):
