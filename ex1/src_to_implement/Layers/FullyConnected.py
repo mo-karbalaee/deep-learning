@@ -16,7 +16,7 @@ class FullyConnected(BaseLayer):
             raise ValueError("Optimizer is missing!")
         
         prev_error_tensor = error_tensor @ self.weights.T
-        gradient_tensor = self.input.T @ error_tensor
+        gradient_tensor = self.input_tensor.T @ error_tensor
         self.weights = self.optimizer.update(self.weights, gradient_tensor)
         return prev_error_tensor
     
