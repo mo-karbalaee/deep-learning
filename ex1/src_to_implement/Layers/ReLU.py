@@ -1,4 +1,4 @@
-from Base import BaseLayer
+from Layers.Base import BaseLayer
 import numpy as np
 
 class ReLU(BaseLayer):
