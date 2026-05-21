@@ -17,12 +17,12 @@ class FullyConnected(BaseLayer):
         
         prev_error_tensor = error_tensor @ self.weights.T
         gradient_tensor = self.input_tensor.T @ error_tensor
-        self.weights = self.optimizer.update(self.weights, gradient_tensor)
+        self.weights = self.optimizer.calculate_update(self.weights, gradient_tensor)
         return prev_error_tensor
     
     @property
     def optimizer(self):
-        self._optimizer
+        return self._optimizer
 
 
     @optimizer.setter
@@ -32,7 +32,7 @@ class FullyConnected(BaseLayer):
     
     @property
     def gradient_weights(self):
-        self._gradient_weights
+        return self._gradient_weights
 
 
     @gradient_weights.setter
