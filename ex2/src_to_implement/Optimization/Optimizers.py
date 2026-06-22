@@ -23,6 +23,7 @@ SGD with momentum is an attempt to make the update steps more adaptive to the
 shape of the field. This means that SGD with oscillate less on flat surfaces. How?
 by adding a velocity term that takes the previous movements and the intensity of them 
 into account for deciding the next move. It is like adding memory to SGD. 
+Makes SGD less stochastic and zig-zagy. 
 """
 
 
