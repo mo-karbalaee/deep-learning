@@ -12,7 +12,7 @@ os.makedirs('checkpoints', exist_ok=True)
 
 data = pd.read_csv('data.csv', sep=';').reset_index(drop=True)
 
-builders = [model.build_convnext, model.build_efficientnet, model.build_resnext50]
+builders = [model.ResNet, model.build_resnet101, model.build_resnext50]
 n_splits = len(builders)
 kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
