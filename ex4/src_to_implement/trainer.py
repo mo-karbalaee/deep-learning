@@ -25,14 +25,14 @@ class Trainer:
         if cuda:
             self._model = model.cuda()
             self._crit = crit.cuda()
-            
+
     def save_checkpoint(self, epoch):
         t.save({'state_dict': self._model.state_dict()}, 'checkpoints/checkpoint_{:03d}.ckp'.format(epoch))
-    
+
     def restore_checkpoint(self, epoch_n):
         ckp = t.load('checkpoints/checkpoint_{:03d}.ckp'.format(epoch_n), 'cuda' if self._cuda else None)
         self._model.load_state_dict(ckp['state_dict'])
-        
+
     def save_onnx(self, fn):
         m = self._model.cpu()
         m.eval()
@@ -47,62 +47,89 @@ class Trainer:
               input_names = ['input'],   # the model's input names
               output_names = ['output'], # the model's output names
               dynamic_axes={'input' : {0 : 'batch_size'},    # variable lenght axes
-                            'output' : {0 : 'batch_size'}})
-            
+                            'output' : {0 : 'batch_size'}},
+              dynamo=False)              # use the legacy exporter so opset_version=10 is honored
+
     def train_step(self, x, y):
-        # perform following steps:
-        # -reset the gradients. By default, PyTorch accumulates (sums up) gradients when backward() is called. This behavior is not required here, so you need to ensure that all the gradients are zero before calling the backward.
-        # -propagate through the network
-        # -calculate the loss
-        # -compute gradient by backward propagation
-        # -update weights
-        # -return the loss
-        #TODO
-        
-        
-    
+        self._optim.zero_grad()
+        output = self._model(x)
+        loss = self._crit(output, y)
+        loss.backward()
+        self._optim.step()
+        return loss.item()
+
     def val_test_step(self, x, y):
-        
-        # predict
-        # propagate through the network and calculate the loss and predictions
-        # return the loss and the predictions
-        #TODO
-        
+        output = self._model(x)
+        loss = self._crit(output, y)
+        return loss.item(), output
+
     def train_epoch(self):
-        # set training mode
-        # iterate through the training set
-        # transfer the batch to "cuda()" -> the gpu if a gpu is given
-        # perform a training step
-        # calculate the average loss for the epoch and return it
-        #TODO
-    
+        self._model.train()
+        total_loss = 0.0
+        batches = 0
+        for x, y in self._train_dl:
+            if self._cuda:
+                x = x.cuda()
+                y = y.cuda()
+            total_loss += self.train_step(x, y)
+            batches += 1
+        return total_loss / max(batches, 1)
+
     def val_test(self):
-        # set eval mode. Some layers have different behaviors during training and testing (for example: Dropout, BatchNorm, etc.). To handle those properly, you'd want to call model.eval()
-        # disable gradient computation. Since you don't need to update the weights during testing, gradients aren't required anymore. 
-        # iterate through the validation set
-        # transfer the batch to the gpu if given
-        # perform a validation step
-        # save the predictions and the labels for each batch
-        # calculate the average loss and average metrics of your choice. You might want to calculate these metrics in designated functions
-        # return the loss and print the calculated metrics
-        #TODO
-        
-    
+        self._model.eval()
+        total_loss = 0.0
+        batches = 0
+        predictions = []
+        labels = []
+        with t.no_grad():
+            for x, y in self._val_test_dl:
+                if self._cuda:
+                    x = x.cuda()
+                    y = y.cuda()
+                loss, output = self.val_test_step(x, y)
+                total_loss += loss
+                batches += 1
+                predictions.append(output.cpu())
+                labels.append(y.cpu())
+
+        predictions = t.cat(predictions, dim=0).numpy()
+        labels = t.cat(labels, dim=0).numpy()
+        predictions = (predictions > 0.5).astype(int)
+
+        avg_loss = total_loss / max(batches, 1)
+        f1 = f1_score(labels, predictions, average='macro')
+        print('val loss: {:.4f} | mean F1: {:.4f}'.format(avg_loss, f1))
+        return avg_loss
+
     def fit(self, epochs=-1):
         assert self._early_stopping_patience > 0 or epochs > 0
-        # create a list for the train and validation losses, and create a counter for the epoch 
-        #TODO
-        
+
+        train_losses = []
+        val_losses = []
+        best_val_loss = None
+        epochs_without_improvement = 0
+        epoch = 0
+
         while True:
-      
-            # stop by epoch number
-            # train for a epoch and then calculate the loss and metrics on the validation set
-            # append the losses to the respective lists
-            # use the save_checkpoint function to save the model (can be restricted to epochs with improvement)
-            # check whether early stopping should be performed using the early stopping criterion and stop if so
-            # return the losses for both training and validation
-        #TODO
-                    
-        
-        
-        
+            if epochs > 0 and epoch >= epochs:
+                break
+
+            train_loss = self.train_epoch()
+            val_loss = self.val_test()
+
+            train_losses.append(train_loss)
+            val_losses.append(val_loss)
+
+            if best_val_loss is None or val_loss < best_val_loss:
+                best_val_loss = val_loss
+                epochs_without_improvement = 0
+                self.save_checkpoint(epoch)
+            else:
+                epochs_without_improvement += 1
+
+            if 0 < self._early_stopping_patience <= epochs_without_improvement:
+                break
+
+            epoch += 1
+
+        return train_losses, val_losses
