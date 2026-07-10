@@ -8,7 +8,6 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 
-
 os.makedirs('checkpoints', exist_ok=True)
 
 data = pd.read_csv('data.csv', sep=';')
@@ -26,7 +25,6 @@ trainer = Trainer(res_model, crit, optim, train_dl, val_dl,
 
 res = trainer.fit(epochs=50)
 
-# plot the results
 plt.plot(np.arange(len(res[0])), res[0], label='train loss')
 plt.plot(np.arange(len(res[1])), res[1], label='val loss')
 plt.yscale('log')

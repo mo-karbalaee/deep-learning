@@ -9,7 +9,6 @@ import torchvision as tv
 train_mean = [0.59685254, 0.59685254, 0.59685254]
 train_std = [0.16043035, 0.16043035, 0.16043035]
 
-
 class ChallengeDataset(Dataset):
     def __init__(self, data, mode):
         super().__init__()
