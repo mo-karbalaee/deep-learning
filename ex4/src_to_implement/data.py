@@ -19,6 +19,7 @@ class ChallengeDataset(Dataset):
         if mode == 'train':
             transforms.append(tv.transforms.RandomHorizontalFlip())
             transforms.append(tv.transforms.RandomVerticalFlip())
+            transforms.append(tv.transforms.RandomRotation(10))
         transforms.append(tv.transforms.ToTensor())
         transforms.append(tv.transforms.Normalize(train_mean, train_std))
         self._transform = tv.transforms.Compose(transforms)

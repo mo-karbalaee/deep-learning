@@ -13,13 +13,19 @@ os.makedirs('checkpoints', exist_ok=True)
 data = pd.read_csv('data.csv', sep=';')
 train_data, val_data = train_test_split(data, test_size=0.2, random_state=42)
 
-train_dl = t.utils.data.DataLoader(ChallengeDataset(train_data, 'train'), batch_size=64, shuffle=True)
+train_labels = train_data[['crack', 'inactive']].values.astype(float)
+pos_counts = train_labels.sum(axis=0)
+class_weights = len(train_labels) / (pos_counts + 1.0)
+sample_weights = (train_labels * class_weights).sum(axis=1) + 1.0
+sampler = t.utils.data.WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
+
+train_dl = t.utils.data.DataLoader(ChallengeDataset(train_data, 'train'), batch_size=64, sampler=sampler)
 val_dl = t.utils.data.DataLoader(ChallengeDataset(val_data, 'val'), batch_size=64, shuffle=False)
 
 res_model = model.ResNet()
 
 crit = t.nn.BCELoss()
-optim = t.optim.Adam(res_model.parameters(), lr=1e-3, weight_decay=1e-4)
+optim = t.optim.Adam(res_model.parameters(), lr=1e-4, weight_decay=1e-5)
 trainer = Trainer(res_model, crit, optim, train_dl, val_dl,
                   cuda=t.cuda.is_available(), early_stopping_patience=10)
 
