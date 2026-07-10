@@ -12,7 +12,8 @@ os.makedirs('checkpoints', exist_ok=True)
 
 data = pd.read_csv('data.csv', sep=';').reset_index(drop=True)
 
-n_splits = 3
+builders = [model.ResNet, model.build_resnet101, model.build_resnext50]
+n_splits = len(builders)
 kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
 fold_ckpts = []
@@ -30,7 +31,7 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(data)):
     train_dl = t.utils.data.DataLoader(ChallengeDataset(train_data, 'train'), batch_size=64, sampler=sampler)
     val_dl = t.utils.data.DataLoader(ChallengeDataset(val_data, 'val'), batch_size=64, shuffle=False)
 
-    res_model = model.ResNet()
+    res_model = builders[fold]()
     crit = t.nn.BCELoss()
     optim = t.optim.Adam(res_model.parameters(), lr=1e-4, weight_decay=1e-4)
     scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(optim, mode='min', factor=0.5, patience=3)
@@ -46,8 +47,8 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(data)):
         os.remove(c)
 
 members = []
-for ck in fold_ckpts:
-    m = model.ResNet()
+for fold, ck in enumerate(fold_ckpts):
+    m = builders[fold]()
     m.load_state_dict(t.load(ck, map_location='cpu')['state_dict'])
     members.append(m)
 
