@@ -43,7 +43,7 @@ class Trainer:
               x,
               fn,
               export_params=True,
-              opset_version=10,
+              opset_version=17,
               do_constant_folding=True,
               input_names = ['input'],
               output_names = ['output'],

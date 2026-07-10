@@ -16,32 +16,49 @@ def _pretrained(name, weights_enum):
     return fn()
 
 
-class _Net(nn.Module):
+def _head_fc(backbone):
+    in_features = backbone.fc.in_features
+    backbone.fc = nn.Sequential(nn.Dropout(0.5), nn.Linear(in_features, 2))
+    return backbone
+
+
+def _head_classifier_seq(backbone):
+    in_features = backbone.classifier[1].in_features
+    backbone.classifier = nn.Sequential(nn.Dropout(0.5), nn.Linear(in_features, 2))
+    return backbone
+
+
+def _head_convnext(backbone):
+    in_features = backbone.classifier[2].in_features
+    backbone.classifier[2] = nn.Linear(in_features, 2)
+    return backbone
+
+
+class _Model(nn.Module):
     def __init__(self, backbone):
         super().__init__()
         self.backbone = backbone
-        in_features = self.backbone.fc.in_features
-        self.backbone.fc = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(in_features, 2),
-        )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         return self.sigmoid(self.backbone(x))
 
 
-class ResNet(_Net):
+class ResNet(_Model):
     def __init__(self):
-        super().__init__(_pretrained('resnet50', 'ResNet50_Weights'))
-
-
-def build_resnet101():
-    return _Net(_pretrained('resnet101', 'ResNet101_Weights'))
+        super().__init__(_head_fc(_pretrained('resnet50', 'ResNet50_Weights')))
 
 
 def build_resnext50():
-    return _Net(_pretrained('resnext50_32x4d', 'ResNeXt50_32X4D_Weights'))
+    return _Model(_head_fc(_pretrained('resnext50_32x4d', 'ResNeXt50_32X4D_Weights')))
+
+
+def build_efficientnet():
+    return _Model(_head_classifier_seq(_pretrained('efficientnet_b3', 'EfficientNet_B3_Weights')))
+
+
+def build_convnext():
+    return _Model(_head_convnext(_pretrained('convnext_tiny', 'ConvNeXt_Tiny_Weights')))
 
 
 class Ensemble(nn.Module):
