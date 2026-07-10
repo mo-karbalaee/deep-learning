@@ -1,6 +1,7 @@
 import numpy as np
 from Layers.Base import BaseLayer
 
+
 class SoftMax(BaseLayer):
     def __init__(self):
         super().__init__()
@@ -16,7 +17,7 @@ class SoftMax(BaseLayer):
         batch_size, num_classes = self.output_tensor.shape
         gradient = np.zeros_like(self.input_tensor)
         for b in range(batch_size):
-            y = self.output_tensor[b:b+1, :]
+            y = self.output_tensor[b : b + 1, :]
             jacobian = np.diag(y.flatten()) - np.outer(y.flatten(), y.flatten())
             gradient[b, :] = error_tensor[b, :] @ jacobian
         return gradient

@@ -3,13 +3,6 @@ from Layers.Base import BaseLayer
 
 
 class Sigmoid(BaseLayer):
-    """
-    Logistic sigmoid activation. It squashes its input into the range (0, 1).
-
-    As with TanH we store the activation (the output), since the derivative can be
-    expressed with the output alone:
-        d/dx sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
-    """
 
     def __init__(self):
         super().__init__()

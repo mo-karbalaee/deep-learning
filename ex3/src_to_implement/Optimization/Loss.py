@@ -18,7 +18,9 @@ class CrossEntropyLoss:
 
         epsilon = np.finfo(float).eps
         prediction_tensor_clipped = np.clip(prediction_tensor, epsilon, 1 - epsilon)
-        loss_per_sample = -np.sum(label_tensor * np.log(prediction_tensor_clipped), axis=1)
+        loss_per_sample = -np.sum(
+            label_tensor * np.log(prediction_tensor_clipped), axis=1
+        )
         return np.sum(loss_per_sample)
 
     def backward(self, label_tensor):
@@ -32,5 +34,7 @@ class CrossEntropyLoss:
             label_tensor = one_hot_labels
 
         epsilon = np.finfo(float).eps
-        prediction_tensor_clipped = np.clip(self.prediction_tensor, epsilon, 1 - epsilon)
+        prediction_tensor_clipped = np.clip(
+            self.prediction_tensor, epsilon, 1 - epsilon
+        )
         return -label_tensor / prediction_tensor_clipped

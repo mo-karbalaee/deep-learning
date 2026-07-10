@@ -3,14 +3,6 @@ from Layers.Base import BaseLayer
 
 
 class TanH(BaseLayer):
-    """
-    Hyperbolic tangent activation. It squashes its input into the range (-1, 1).
-
-    We store the *activation* (the output) rather than the input, because the
-    derivative of tanh can be written purely in terms of its output:
-        d/dx tanh(x) = 1 - tanh(x)^2
-    This is the dynamic-programming trick mentioned in the task.
-    """
 
     def __init__(self):
         super().__init__()

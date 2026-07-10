@@ -1,6 +1,7 @@
 import numpy as np
 from Layers.Base import BaseLayer
 
+
 class FullyConnected(BaseLayer):
     def __init__(self, input_size, output_size):
         super().__init__()
@@ -12,7 +13,9 @@ class FullyConnected(BaseLayer):
         self._gradient_weights = None
 
     def initialize(self, weights_initializer, bias_initializer):
-        w = weights_initializer.initialize((self.input_size, self.output_size), self.input_size, self.output_size)
+        w = weights_initializer.initialize(
+            (self.input_size, self.output_size), self.input_size, self.output_size
+        )
         b = bias_initializer.initialize((1, self.output_size), 1, self.output_size)
         self.weights = np.vstack((w, b))
 
@@ -25,7 +28,9 @@ class FullyConnected(BaseLayer):
     def backward(self, error_tensor):
         self._gradient_weights = self.input_tensor.T @ error_tensor
         if self._optimizer:
-            self.weights = self._optimizer.calculate_update(self.weights, self._gradient_weights)
+            self.weights = self._optimizer.calculate_update(
+                self.weights, self._gradient_weights
+            )
         return error_tensor @ self.weights[:-1, :].T
 
     @property

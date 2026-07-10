@@ -5,22 +5,6 @@ from Layers.FullyConnected import FullyConnected
 
 
 class LSTM(BaseLayer):
-    """
-    Long Short-Term Memory layer.
-
-    For every time step t (batch dimension == time), with concat = [h_{t-1}, x_t]:
-        f_t  = sigmoid(W_f . concat + b_f)      (forget gate)
-        i_t  = sigmoid(W_i . concat + b_i)      (input gate)
-        c~_t = tanh   (W_c . concat + b_c)      (candidate cell)
-        o_t  = sigmoid(W_o . concat + b_o)      (output gate)
-        c_t  = f_t * c_{t-1} + i_t * c~_t
-        h_t  = o_t * tanh(c_t)
-        y_t  = sigmoid(W_y . h_t + b_y)
-
-    The four gate transforms share a single FullyConnected layer whose output is the
-    stacked pre-activation of all gates (dimension 4 * hidden_size). This matches the
-    weights shape checked by the test suite.
-    """
 
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
@@ -29,7 +13,6 @@ class LSTM(BaseLayer):
         self.hidden_size = hidden_size
         self.output_size = output_size
 
-        # One FC produces all four gate pre-activations stacked together.
         self.fc_gates = FullyConnected(input_size + hidden_size, 4 * hidden_size)
         self.fc_output = FullyConnected(hidden_size, output_size)
 
@@ -71,20 +54,19 @@ class LSTM(BaseLayer):
 
         outputs = np.zeros((time_steps, self.output_size))
 
-        # Per-time-step caches for BPTT.
         self._cache = []
 
         for t in range(time_steps):
             x_t = input_tensor[t]
             concat = np.concatenate((h, x_t)).reshape(1, -1)
 
-            gates_pre = self.fc_gates.forward(concat)  # (1, 4*hidden)
+            gates_pre = self.fc_gates.forward(concat)
             gate_input = self.fc_gates.input_tensor
 
-            f_pre = gates_pre[:, 0 * h_dim:1 * h_dim]
-            i_pre = gates_pre[:, 1 * h_dim:2 * h_dim]
-            c_pre = gates_pre[:, 2 * h_dim:3 * h_dim]
-            o_pre = gates_pre[:, 3 * h_dim:4 * h_dim]
+            f_pre = gates_pre[:, 0 * h_dim : 1 * h_dim]
+            i_pre = gates_pre[:, 1 * h_dim : 2 * h_dim]
+            c_pre = gates_pre[:, 2 * h_dim : 3 * h_dim]
+            o_pre = gates_pre[:, 3 * h_dim : 4 * h_dim]
 
             f = self._sigmoid(f_pre)
             i = self._sigmoid(i_pre)
@@ -96,19 +78,26 @@ class LSTM(BaseLayer):
             tanh_c = np.tanh(c_new)
             h_new = o * tanh_c
 
-            output_pre = self.fc_output.forward(h_new)  # (1, output)
+            output_pre = self.fc_output.forward(h_new)
             output_fc_input = self.fc_output.input_tensor
             y = self._sigmoid(output_pre)
 
             outputs[t] = y.reshape(-1)
 
-            self._cache.append({
-                'gate_input': gate_input,
-                'output_fc_input': output_fc_input,
-                'f': f, 'i': i, 'c_tilde': c_tilde, 'o': o,
-                'c_prev': c_prev, 'c_new': c_new, 'tanh_c': tanh_c,
-                'y': y,
-            })
+            self._cache.append(
+                {
+                    "gate_input": gate_input,
+                    "output_fc_input": output_fc_input,
+                    "f": f,
+                    "i": i,
+                    "c_tilde": c_tilde,
+                    "o": o,
+                    "c_prev": c_prev,
+                    "c_new": c_new,
+                    "tanh_c": tanh_c,
+                    "y": y,
+                }
+            )
 
             h = h_new.reshape(-1)
             c = c_new.reshape(-1)
@@ -132,46 +121,41 @@ class LSTM(BaseLayer):
             cache = self._cache[t]
             e = error_tensor[t].reshape(1, -1)
 
-            # Output sigmoid + output FC.
-            y = cache['y']
+            y = cache["y"]
             e = e * y * (1.0 - y)
-            self.fc_output.input_tensor = cache['output_fc_input']
+            self.fc_output.input_tensor = cache["output_fc_input"]
             grad_h = self.fc_output.backward(e)
             grad_w_output += self.fc_output.gradient_weights
 
             grad_h = grad_h + grad_h_next
 
-            # h = o * tanh(c)
-            o = cache['o']
-            tanh_c = cache['tanh_c']
+            o = cache["o"]
+            tanh_c = cache["tanh_c"]
             grad_o = grad_h * tanh_c
             grad_tanh_c = grad_h * o
 
-            # tanh(c) and the cell-state gradient from the future step.
-            grad_c = grad_tanh_c * (1.0 - tanh_c ** 2) + grad_c_next
+            grad_c = grad_tanh_c * (1.0 - tanh_c**2) + grad_c_next
 
-            # c = f * c_prev + i * c_tilde
-            f = cache['f']
-            i = cache['i']
-            c_tilde = cache['c_tilde']
-            c_prev = cache['c_prev']
+            f = cache["f"]
+            i = cache["i"]
+            c_tilde = cache["c_tilde"]
+            c_prev = cache["c_prev"]
 
             grad_f = grad_c * c_prev
             grad_c_prev = grad_c * f
             grad_i = grad_c * c_tilde
             grad_c_tilde = grad_c * i
 
-            # Back through the gate nonlinearities.
             grad_f_pre = grad_f * f * (1.0 - f)
             grad_i_pre = grad_i * i * (1.0 - i)
-            grad_c_pre = grad_c_tilde * (1.0 - c_tilde ** 2)
+            grad_c_pre = grad_c_tilde * (1.0 - c_tilde**2)
             grad_o_pre = grad_o * o * (1.0 - o)
 
             grad_gates_pre = np.concatenate(
                 (grad_f_pre, grad_i_pre, grad_c_pre, grad_o_pre), axis=1
             )
 
-            self.fc_gates.input_tensor = cache['gate_input']
+            self.fc_gates.input_tensor = cache["gate_input"]
             grad_concat = self.fc_gates.backward(grad_gates_pre)
             grad_w_gates += self.fc_gates.gradient_weights
 
@@ -182,9 +166,13 @@ class LSTM(BaseLayer):
         self._gradient_weights = grad_w_gates
 
         if self._optimizer is not None:
-            self.fc_gates.weights = self._optimizer.calculate_update(self.fc_gates.weights, grad_w_gates)
+            self.fc_gates.weights = self._optimizer.calculate_update(
+                self.fc_gates.weights, grad_w_gates
+            )
         if self._output_optimizer is not None:
-            self.fc_output.weights = self._output_optimizer.calculate_update(self.fc_output.weights, grad_w_output)
+            self.fc_output.weights = self._output_optimizer.calculate_update(
+                self.fc_output.weights, grad_w_output
+            )
 
         return error_prev
 
@@ -192,7 +180,10 @@ class LSTM(BaseLayer):
         reg_loss = 0.0
         if self._optimizer is not None and self._optimizer.regularizer is not None:
             reg_loss += self._optimizer.regularizer.norm(self.fc_gates.weights)
-        if self._output_optimizer is not None and self._output_optimizer.regularizer is not None:
+        if (
+            self._output_optimizer is not None
+            and self._output_optimizer.regularizer is not None
+        ):
             reg_loss += self._output_optimizer.regularizer.norm(self.fc_output.weights)
         return reg_loss
 
@@ -219,5 +210,5 @@ class LSTM(BaseLayer):
 
     @weights.setter
     def weights(self, value):
-        if hasattr(self, 'fc_gates'):
+        if hasattr(self, "fc_gates"):
             self.fc_gates.weights = value

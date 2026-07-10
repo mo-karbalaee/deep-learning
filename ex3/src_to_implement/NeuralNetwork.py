@@ -19,31 +19,29 @@ class NeuralNetwork:
 
     @phase.setter
     def phase(self, value):
-        # Propagate the training/testing phase to every layer so that phase
-        # dependent layers (Dropout, BatchNormalization) behave accordingly.
         self._phase = value
         for layer in self.layers:
             layer.testing_phase = value
 
     def append_layer(self, layer):
-        if hasattr(layer, 'trainable') and layer.trainable:
+        if hasattr(layer, "trainable") and layer.trainable:
             layer.optimizer = copy.deepcopy(self.optimizer)
-            if hasattr(layer, 'initialize'):
+            if hasattr(layer, "initialize"):
                 layer.initialize(self.weights_initializer, self.bias_initializer)
         self.layers.append(layer)
 
     def _regularization_loss(self):
-        # Sum the regularization penalty contributed by every trainable layer.
         reg_loss = 0.0
         for layer in self.layers:
-            # Recurrent layers know how to compute their own (possibly multi-weight)
-            # regularization loss.
-            if hasattr(layer, 'calculate_regularization_loss'):
+            if hasattr(layer, "calculate_regularization_loss"):
                 reg_loss += layer.calculate_regularization_loss()
-            elif getattr(layer, 'trainable', False):
-                optimizer = getattr(layer, 'optimizer', None)
-                if optimizer is not None and getattr(optimizer, 'regularizer', None) is not None \
-                        and layer.weights is not None:
+            elif getattr(layer, "trainable", False):
+                optimizer = getattr(layer, "optimizer", None)
+                if (
+                    optimizer is not None
+                    and getattr(optimizer, "regularizer", None) is not None
+                    and layer.weights is not None
+                ):
                     reg_loss += optimizer.regularizer.norm(layer.weights)
         return reg_loss
 
@@ -75,32 +73,27 @@ class NeuralNetwork:
         return self.loss_layer.forward(out, None)
 
     def __getstate__(self):
-        # The data layer is a generator-like object that cannot be pickled, so we
-        # drop it from the state that gets serialized.
         state = self.__dict__.copy()
-        state['data_layer'] = None
+        state["data_layer"] = None
         return state
 
     def __setstate__(self, state):
         self.__dict__ = state
-        # Restore the dropped member with None; the caller of 'load' will set the
-        # data layer again afterwards.
         self.data_layer = None
 
 
 def save(filename, net):
-    # Temporarily detach the (unpicklable) data layer, dump the network, restore it.
     data_layer = net.data_layer
     net.data_layer = None
     try:
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             pickle.dump(net, f)
     finally:
         net.data_layer = data_layer
 
 
 def load(filename, data_layer):
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         net = pickle.load(f)
     net.data_layer = data_layer
     return net
