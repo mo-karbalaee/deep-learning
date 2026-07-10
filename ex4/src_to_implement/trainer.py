@@ -11,13 +11,15 @@ class Trainer:
                  train_dl=None,
                  val_test_dl=None,
                  cuda=True,
-                 early_stopping_patience=-1):
+                 early_stopping_patience=-1,
+                 scheduler=None):
         self._model = model
         self._crit = crit
         self._optim = optim
         self._train_dl = train_dl
         self._val_test_dl = val_test_dl
         self._cuda = cuda
+        self._scheduler = scheduler
 
         self._early_stopping_patience = early_stopping_patience
 
@@ -118,6 +120,9 @@ class Trainer:
 
             train_losses.append(train_loss)
             val_losses.append(val_loss)
+
+            if self._scheduler is not None:
+                self._scheduler.step(val_loss)
 
             if best_val_loss is None or val_loss < best_val_loss:
                 best_val_loss = val_loss

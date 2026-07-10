@@ -17,9 +17,11 @@ class ChallengeDataset(Dataset):
 
         transforms = [tv.transforms.ToPILImage()]
         if mode == 'train':
+            transforms.append(tv.transforms.RandomResizedCrop(300, scale=(0.85, 1.0)))
             transforms.append(tv.transforms.RandomHorizontalFlip())
             transforms.append(tv.transforms.RandomVerticalFlip())
             transforms.append(tv.transforms.RandomRotation(10))
+            transforms.append(tv.transforms.ColorJitter(brightness=0.2, contrast=0.2))
         transforms.append(tv.transforms.ToTensor())
         transforms.append(tv.transforms.Normalize(train_mean, train_std))
         self._transform = tv.transforms.Compose(transforms)

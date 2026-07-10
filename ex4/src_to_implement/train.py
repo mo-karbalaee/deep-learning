@@ -26,8 +26,9 @@ res_model = model.ResNet()
 
 crit = t.nn.BCELoss()
 optim = t.optim.Adam(res_model.parameters(), lr=1e-4, weight_decay=1e-5)
+scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(optim, mode='min', factor=0.5, patience=3)
 trainer = Trainer(res_model, crit, optim, train_dl, val_dl,
-                  cuda=t.cuda.is_available(), early_stopping_patience=10)
+                  cuda=t.cuda.is_available(), early_stopping_patience=10, scheduler=scheduler)
 
 res = trainer.fit(epochs=50)
 
