@@ -1,6 +1,11 @@
 import numpy as np
 
-
+"""
+One of the key changes have been here. We implemented a parent class 
+and made all the previously-implemented optimizers extend it so that we
+don't have to copy and paste optimizer code for each of these classes. 
+They inherit that from their parent class. 
+"""
 class Optimizer:
 
     def __init__(self):

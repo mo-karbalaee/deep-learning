@@ -16,7 +16,12 @@ class NeuralNetwork:
     @property
     def phase(self):
         return self._phase
-
+    
+    """
+    Although the phase has been defined as a per-layer property, we 
+    don't need to control it per layer hence we define getters and setters
+    for it network-wide. 
+    """
     @phase.setter
     def phase(self, value):
         self._phase = value
