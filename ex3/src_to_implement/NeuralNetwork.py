@@ -16,7 +16,12 @@ class NeuralNetwork:
     @property
     def phase(self):
         return self._phase
-
+    
+    """
+    Although the phase has been defined as a per-layer property, we 
+    don't need to control it per layer hence we define getters and setters
+    for it network-wide. 
+    """
     @phase.setter
     def phase(self, value):
         self._phase = value
@@ -29,8 +34,20 @@ class NeuralNetwork:
             if hasattr(layer, "initialize"):
                 layer.initialize(self.weights_initializer, self.bias_initializer)
         self.layers.append(layer)
-
+            
     def _regularization_loss(self):
+        """
+        This will iterate through all the layers and calculate 
+        the regularization loss. Namely, the penalty term. 
+        We want to add it to the data loss we need it for all layers. 
+        We do this in the forward path. 
+        One might ask why are we calculating and summing them up 
+        across all layers in the forward path, but we are not doing it in 
+        the backward path, the answer is that it's because the network
+        has to report the total loss in the end of one forward path, but
+        during the backward path each layer should only operate on its own
+        weights. That's it. 
+        """
         reg_loss = 0.0
         for layer in self.layers:
             if hasattr(layer, "calculate_regularization_loss"):
